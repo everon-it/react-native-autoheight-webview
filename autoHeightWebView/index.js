@@ -16,14 +16,19 @@ import {
 } from './utils';
 
 const AutoHeightWebView = React.memo(
-  forwardRef((props, ref) => {
-    const {
+  forwardRef(({
       style,
       onMessage,
       onSizeUpdated,
       scrollEnabledWithZoomedin,
       scrollEnabled,
-    } = props;
+      showsVerticalScrollIndicator = false,
+      showsHorizontalScrollIndicator = false,
+      originWhitelist = ['*'],
+      viewportContent = Platform.OS === 'ios' ? 'width=device-width' : undefined,
+      scalesPageToFit = Platform.OS === 'android' ? false : undefined,
+      ...restProps
+    }, ref) => {
 
     const [size, setSize] = useState({
       height: style && style.height ? style.height : 0,
@@ -62,7 +67,7 @@ const AutoHeightWebView = React.memo(
         ? scrollable
         : scrollEnabled;
 
-    const {currentSource, script} = reduceData(props);
+    const {currentSource, script} = reduceData({...restProps, style, viewportContent});
 
     const {width, height} = size;
     useEffect(() => {
@@ -74,7 +79,7 @@ const AutoHeightWebView = React.memo(
     }, [width, height, onSizeUpdated]);
 
     return React.createElement(WebView, {
-      ...props,
+      ...restProps,
       ref,
       onMessage: handleMessage,
       style: [
@@ -88,6 +93,11 @@ const AutoHeightWebView = React.memo(
       injectedJavaScript: script,
       source: currentSource,
       scrollEnabled: currentScrollEnabled,
+      showsHorizontalScrollIndicator,
+      showsVerticalScrollIndicator,
+      originWhitelist,
+      scalesPageToFit,
+      viewportContent,
     });
   }),
   (prevProps, nextProps) => !shouldUpdate({prevProps, nextProps}),
@@ -113,24 +123,6 @@ AutoHeightWebView.propTypes = {
   scalesPageToFit: PropTypes.bool,
   source: PropTypes.object,
 };
-
-let defaultProps = {
-  showsVerticalScrollIndicator: false,
-  showsHorizontalScrollIndicator: false,
-  originWhitelist: ['*'],
-};
-
-Platform.OS === 'android' &&
-  Object.assign(defaultProps, {
-    scalesPageToFit: false,
-  });
-
-Platform.OS === 'ios' &&
-  Object.assign(defaultProps, {
-    viewportContent: 'width=device-width',
-  });
-
-AutoHeightWebView.defaultProps = defaultProps;
 
 const styles = StyleSheet.create({
   webView: {
